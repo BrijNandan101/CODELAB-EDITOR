@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLab - Premium Compiler</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- CodeMirror for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/eclipse.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/rust/rust.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/go/go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editor Settings</h2>
+                <button class="modal-close" id="settingsClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label for="fontSizeSlider">Font Size: <span id="fontSizeValue">14px</span></label>
+                    <input type="range" id="fontSizeSlider" min="12" max="24" value="14" step="1">
+                </div>
+                <div class="setting-group">
+                    <label for="tabSizeInput">Tab Size:</label>
+                    <input type="number" id="tabSizeInput" min="2" max="8" value="4">
+                </div>
+                <div class="setting-group">
+                    <label for="themeSelect">Editor Theme:</label>
+                    <select id="themeSelect">
+                        <option value="default">Default</option>
+                        <option value="dracula">Dracula</option>
+                        <option value="eclipse">Eclipse</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="autoCloseBrackets"> Auto-close brackets
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="lineWrapping"> Line wrapping
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="settingsCancel">Cancel</button>
+                <button class="btn-primary" id="settingsSave">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Explorer Sidebar -->
+    <div class="file-explorer" id="fileExplorer">
+        <div class="file-explorer-header">
+            <h3>Files</h3>
+            <button class="action-btn" id="closeExplorer" title="Close Explorer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="file-list" id="fileList">
+            <div class="file-item active" data-file="main.js">
+                <i class="fas fa-file-code"></i>
+                <span>main.js</span>
+            </div>
+        </div>
+        <div class="file-explorer-actions">
+            <button class="btn-icon" id="newFileBtn" title="New File">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="btn-icon" id="newFolderBtn" title="New Folder">
+                <i class="fas fa-folder-plus"></i>
+            </button>
+            <button class="btn-icon" id="uploadFileBtn" title="Upload File">
+                <i class="fas fa-upload"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <span>CodeLab</span>
+            </div>
+            
+            <div class="controls">
+                <button class="theme-btn" id="themeBtn" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <div class="language-dropdown">
+                    <button class="language-btn" id="languageBtn">
+                        <span class="lang-js"></span>
+                        <span id="currentLang">JavaScript</span>
+                        <i class="fas fa-chevron-down" style="font-size: 10px; opacity: 0.7;"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dropdown-item" data-lang="javascript">
+                            <span class="lang-js"></span>
+                            JavaScript
+                        </div>
+                        <div class="dropdown-item" data-lang="typescript">
+                            <span class="lang-typescript"></span>
+                            TypeScript
+                        </div>
+                        <div class="dropdown-item" data-lang="python">
+                            <span class="lang-python"></span>
+                            Python
+                        </div>
+                        <div class="dropdown-item" data-lang="java">
+                            <span class="lang-java"></span>
+                            Java
+                        </div>
+                        <div class="dropdown-item" data-lang="cpp">
+                            <span class="lang-cpp"></span>
+                            C++
+                        </div>
+                        <div class="dropdown-item" data-lang="c">
+                            <span class="lang-c"></span>
+                            C
+                        </div>
+                        <div class="dropdown-item" data-lang="go">
+                            <span class="lang-go"></span>
+                            Go
+                        </div>
+                        <div class="dropdown-item" data-lang="rust">
+                            <span class="lang-rust"></span>
+                            Rust
+                        </div>
+                        <div class="dropdown-item" data-lang="html">
+                            <span class="lang-html"></span>
+                            HTML
+                        </div>
+                        <div class="dropdown-item" data-lang="css">
+                            <span class="lang-css"></span>
+                            CSS
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="run-btn" id="runBtn">
+                    <i class="fas fa-play"></i>
+                    <span>Execute</span>
+                </button>
+
+                <button class="debug-btn" id="debugBtn" title="Debug Code">
+                    <i class="fas fa-bug"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="panel editor-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-file-code"></i>
+                        <span id="currentFileName">main</span>
+                    </div>
+                    <div class="panel-actions">
+                        <button class="action-btn" id="fileExplorerBtn" title="File Explorer">
+                            <i class="fas fa-folder"></i>
+                        </button>
+                        <div style="position: relative;">
+                            <button class="action-btn" title="File Operations" id="fileBtn">
+                                <i class="fas fa-file"></i>
+                            </button>
+                            <div class="file-menu" id="fileMenu">
+                                <div class="file-item" id="newFile">
+                                    <i class="fas fa-file-plus"></i>
+                                    New File
+                                </div>
+                                <div class="file-item" id="saveFile">
+                                    <i class="fas fa-save"></i>
+                                    Save File
+                                </div>
+                                <div class="file-item" id="saveAsFile">
+                                    <i class="fas fa-save"></i>
+                                    Save As...
+                                </div>
+                                <div class="file-item" id="loadFile">
+                                    <i class="fas fa-folder-open"></i>
+                                    Open File
+                                </div>
+                                <div class="file-item" id="downloadFile">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </div>
+                                <div class="menu-divider"></div>
+                                <div class="file-item" id="newProject">
+                                    <i class="fas fa-folder-plus"></i>
+                                    New Project
+                                </div>
+                                <div class="file-item" id="exportProject">
+                                    <i class="fas fa-file-export"></i>
+                                    Export Project
+                                </div>
+                            </div>
+                        </div>
+                        <button class="action-btn" title="Format Code" id="formatBtn">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                        <button class="action-btn" title="Settings" id="settingsBtn">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button class="action-btn" title="Fullscreen" id="fullscreenBtn">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="code-container" id="codeContainer"></div>
+                </div>
+                
+                <div class="io-section" id="ioSection">
+                    <div class="io-header">
+                        <h4>Custom Input</h4>
+                        <button class="io-toggle" id="ioToggle">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <textarea class="io-input" id="customInput" 
+                        placeholder="Enter custom input for your program..."></textarea>
+                </div>
+            </div>
+
+            <div class="panel output-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-terminal"></i>
+                        Console Output
+                    </div>
+                    <div class="panel-actions">
+                        <button class="action-btn" title="Toggle Input" id="inputToggle">
+                            <i class="fas fa-keyboard"></i>
+                        </button>
+                        <button class="action-btn" title="Clear Output" id="clearBtn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="action-btn" title="Copy Output" id="copyBtn">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="action-btn" title="Download" id="downloadBtn">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="output-content">
+                    <div class="output-tabs">
+                        <button class="output-tab active" data-tab="output">Output</button>
+                        <button class="output-tab" data-tab="debug">Debug</button>
+                        <button class="output-tab" data-tab="complexity">Complexity</button>
+                    </div>
+                    <div class="output-area active" id="outputArea">🎯 Ready to execute your code!
+
+💡 Tips:
+  • Use Ctrl+Enter to run code quickly
+  • Try different languages from the dropdown
+  • Use the input section for interactive programs
+  • Check out the file operations menu
+
+Happy coding! ✨</div>
+                    <div class="output-area" id="complexityArea">
+                        <!-- Complexity analysis will be displayed here -->
+                    </div>
+                    <div class="output-area" id="debugArea">
+                        <div class="debug-controls">
+                            <button class="debug-action" id="debugContinue">
+                                <i class="fas fa-play"></i> Continue
+                            </button>
+                            <button class="debug-action" id="debugStepOver">
+                                <i class="fas fa-step-forward"></i> Step Over
+                            </button>
+                            <button class="debug-action" id="debugStepInto">
+                                <i class="fas fa-level-down-alt"></i> Step Into
+                            </button>
+                            <button class="debug-action" id="debugStepOut">
+                                <i class="fas fa-level-up-alt"></i> Step Out
+                            </button>
+                        </div>
+                        <div class="debug-info">
+                            <h4>Breakpoints</h4>
+                            <div id="breakpointsList">No breakpoints set</div>
+                            <h4>Variables</h4>
+                            <div id="variablesList">No variables to display</div>
+                        </div>
+                    </div>
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-content">
+                            <div class="spinner"></div>
+                            <div>Executing your code...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check"></i>
+        <span id="toastMessage">Action completed!</span>
+    </div>
+
+    <input type="file" id="fileInput" style="display: none;" accept=".js,.py,.java,.cpp,.c,.html,.css,.ts,.go,.rs,.txt">
+    <input type="file" id="projectInput" style="display: none;" accept=".json" multiple>
+
+    <script src="script.js"></script>
+</body>
+</html>
