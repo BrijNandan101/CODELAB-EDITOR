@@ -9,23 +9,23 @@ const app = express();
 const port = process.env.PORT || 3003;
 const EXECUTE_TIMEOUT_MS = parseInt(process.env.EXECUTE_TIMEOUT_MS || '15000', 10);
 
-const corsOptions = {
-  origin: 'https://codelab-editor-leto-git-main-brijnandan101s-projects.vercel.app',
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable pre-flight request for all routes
+app.use(cors());
 app.use(bodyParser.json());
 
+// Serve frontend files
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+
+// Fallback to index.html for static single-page hosting (optional for static hosting)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+});
+
 // Health check for deployments
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-app.post('/api/execute', (req, res) => {
+app.post('/execute', (req, res) => {
     const { language, code, input } = req.body;
 
     if (!code) {
@@ -253,7 +253,7 @@ app.post('/api/execute', (req, res) => {
     runCode();
 });
 
-app.post('/api/analyze', (req, res) => {
+app.post('/analyze', (req, res) => {
     const { language, code } = req.body;
 
     if (!code) {

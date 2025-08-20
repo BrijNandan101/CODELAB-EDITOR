@@ -47,17 +47,19 @@ CodeLab is a feature-rich, browser-based code editor with a powerful Node.js bac
 
 ## ☁️ Deployment
 
-This project is configured for a unified deployment on Vercel using the `vercel.json` file.
+You can deploy this project to any platform that supports Node.js, such as Heroku, Vercel, or Netlify.
 
 1.  Push the project to your GitHub repository.
-2.  On Vercel, import your GitHub repository.
-3.  Vercel will automatically use the `vercel.json` file to configure the build and routing.
+2.  Connect your repository to your hosting platform.
+3.  Set the build and start commands:
+    -   **Build Command**: `cd backend && npm install`
+    -   **Start Command**: `npm start`
 4.  Deploy the application.
 
 ## API Endpoints
 
--   `POST /api/execute`: Executes code and returns the output.
--   `POST /api/analyze`: Analyzes code and returns the time and space complexity.
+-   `POST /execute`: Executes code and returns the output.
+-   `POST /analyze`: Analyzes code and returns the time and space complexity.
 -   `GET /health`: Checks the health of the server.
 
 ---
