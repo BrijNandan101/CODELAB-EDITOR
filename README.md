@@ -47,31 +47,17 @@ CodeLab is a feature-rich, browser-based code editor with a powerful Node.js bac
 
 ## ☁️ Deployment
 
-This project is designed for separate frontend and backend deployments.
-
-### Backend Deployment (Vercel)
+This project is configured for a unified deployment on Vercel using the `vercel.json` file.
 
 1.  Push the project to your GitHub repository.
 2.  On Vercel, import your GitHub repository.
-3.  Configure the project with the following settings:
-    -   **Framework Preset**: `Other`
-    -   **Root Directory**: `backend`
-    -   **Install Command**: `npm install`
-    -   **Start Command**: `node server.js`
-
-### Frontend Deployment (Vercel)
-
-1.  On Vercel, import the same GitHub repository again.
-2.  Configure the project with the following settings:
-    -   **Framework Preset**: `Other`
-    -   **Root Directory**: `frontend`
-    -   Leave the **Build & Development Settings** as their defaults.
-3.  Deploy. Vercel will serve your static `frontend` directory.
+3.  Vercel will automatically use the `vercel.json` file to configure the build and routing.
+4.  Deploy the application.
 
 ## API Endpoints
 
--   `POST /execute`: Executes code and returns the output.
--   `POST /analyze`: Analyzes code and returns the time and space complexity.
+-   `POST /api/execute`: Executes code and returns the output.
+-   `POST /api/analyze`: Analyzes code and returns the time and space complexity.
 -   `GET /health`: Checks the health of the server.
 
 ---
