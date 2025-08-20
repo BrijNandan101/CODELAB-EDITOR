@@ -12,6 +12,14 @@ CodeLab is a feature-rich, browser-based code editor with a powerful Node.js bac
 -   **Customizable Editor**: Adjust font size, tab size, and themes to fit your preferences.
 -   **IO Panel**: Provide custom input for your programs and view the output in a dedicated console.
 
+## 📸 Screenshots
+
+### Complexity Analysis View
+![Complexity Analysis View](Screenshot 2025-08-20 181836.png)
+
+### Console Output View
+![Console Output View](Screenshot 2025-08-20 181901.png)
+
 ## 🚀 Getting Started
 
 ### Prerequisites
