@@ -544,7 +544,7 @@ body {
 .main-content {
     flex: 1;
     display: grid;
-    grid-template-columns: 50% 50%;
+    grid-template-columns: minmax(280px, 1fr) 8px minmax(280px, 1fr);
     min-height: 0;
     border-top: 1px solid var(--border-secondary);
 }
@@ -640,12 +640,33 @@ body {
 .editor-panel {
     border-right: 1px solid var(--border-primary);
     position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Allow flex child to shrink */
+}
+
+/* Draggable resizer between editor and output */
+.resizer {
+    width: 8px;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+}
+
+.resizer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 2px;
+    background: var(--border-primary);
 }
 
 /* Editor Container */
 .editor-container {
     position: relative;
-    flex: 1;
+    flex: 1 1 auto; /* Allow container to grow and shrink */
     display: flex;
     overflow: hidden;
 }
@@ -654,18 +675,23 @@ body {
 /* Code Container for CodeMirror */
 .code-container {
     flex: 1;
-    height: 100%;
-    overflow: auto;
+    overflow: hidden; /* Let CodeMirror handle its own scrolling */
+    position: relative;
 }
 
 /* CodeMirror Customization */
 .CodeMirror {
-    height: 100% !important;
     font-family: var(--font-mono) !important;
     font-size: var(--editor-font-size) !important;
     line-height: 1.65 !important;
     background: var(--bg-tertiary) !important;
     color: var(--text-secondary) !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto !important;
 }
 
 .CodeMirror-gutters {
@@ -708,6 +734,8 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
+    min-height: 0;
+    overflow: hidden; /* prevent page scroll; let inner area scroll */
 }
 
 /* Output Tabs */
@@ -741,23 +769,116 @@ body {
 }
 
 .output-area {
-    flex: 1;
+    flex: 1 1 auto;
     background: var(--bg-tertiary);
     color: var(--text-muted);
     padding: var(--space-md);
     font-family: var(--font-mono);
     font-size: 0.8125rem;
     line-height: 1.6;
-    overflow-y: auto;
+    overflow: auto; /* scroll inside the panel, not the page */
     white-space: pre-wrap;
     border: none;
     outline: none;
     word-break: break-word;
     display: none;
+    min-height: 0; /* allow flex child to shrink */
 }
 
 .output-area.active {
-    display: block;
+    display: block !important;
+}
+
+/* Remove the conflicting rule that forces all non-empty areas to be visible */
+/* .output-area:not(:empty) {
+    display: block !important;
+} */
+
+/* Only show complexity area when it's the active tab */
+#complexityArea.active {
+    display: block !important;
+}
+
+/* Complexity Analysis Styles */
+.complexity-analysis {
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.complexity-group {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.complexity-group h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 3rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.complexity-group h4 i {
+    color: var(--accent-primary);
+    width: 16px;
+}
+
+.complexity-result {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.complexity-result strong {
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.complexity-explanation {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: var(--space-md);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.complexity-explanation h4 {
+    font-size: 0.875rem;
+    color: var(--accent-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.complexity-explanation ul {
+    padding-left: var(--space-md);
+    margin: 0;
+}
+
+.complexity-explanation li {
+    margin-bottom: var(--space-xs);
+}
+
+.complexity-error {
+    padding: var(--space-md);
+    text-align: center;
+}
+
+.complexity-error h4 {
+    color: var(--accent-error);
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
 }
 
 .output-area iframe {
@@ -1623,4 +1744,61 @@ html {
 .btn:hover,
 .action-btn:hover {
     will-change: transform, box-shadow;
+}
+
+/* Compact layout overrides for output tabs (complexity and debug) */
+#complexityArea.output-area,
+#debugArea.output-area {
+    padding: var(--space-sm);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.complexity-analysis {
+    padding: var(--space-sm);
+}
+
+.complexity-analysis h4 {
+    font-size: 0.8rem;
+    margin: var(--space-sm) 0 var(--space-xs) 0;
+}
+
+.complexity-result {
+    padding: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    font-size: 0.8rem;
+}
+
+.complexity-explanation {
+    padding: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.complexity-explanation ul {
+    margin: var(--space-xs) 0 0 0;
+    padding-left: var(--space-md);
+}
+
+.complexity-explanation li {
+    margin-bottom: var(--space-xs);
+}
+
+.debug-controls {
+    padding: var(--space-sm);
+    gap: var(--space-xs);
+}
+
+.debug-action {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.7rem;
+}
+
+.debug-info {
+    padding: var(--space-sm);
+}
+
+#breakpointsList, #variablesList {
+    padding: var(--space-xs);
+    margin-bottom: var(--space-sm);
+    min-height: 24px;
 }

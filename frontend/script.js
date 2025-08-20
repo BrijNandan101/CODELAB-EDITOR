@@ -11,6 +11,7 @@ const debugBtn = document.getElementById('debugBtn');
 const outputArea = document.getElementById('outputArea');
 const problemsArea = document.getElementById('problemsArea');
 const debugArea = document.getElementById('debugArea');
+const complexityArea = document.getElementById('complexityArea');
 const lineNumbers = document.getElementById('lineNumbers');
 const clearBtn = document.getElementById('clearBtn');
 const copyBtn = document.getElementById('copyBtn');
@@ -163,9 +164,9 @@ function initEditor() {
     
     // Initialize file system
     createFileSystem();
-    
-    // Show welcome message
-    showToast('Welcome to CodeLab! Start coding now.', 'info');
+
+    // Initialize panel resizer
+    initMainResizer();
 }
 
 // Initialize CodeMirror editor
@@ -177,7 +178,7 @@ function initCodeMirror() {
         lineNumbers: true,
         indentUnit: parseInt(localStorage.getItem('codelab-tab-size') || 4),
         tabSize: parseInt(localStorage.getItem('codelab-tab-size') || 4),
-        lineWrapping: localStorage.getItem('codelab-line-wrapping') === 'true',
+        lineWrapping: false, // Disable line wrapping to enable horizontal scrolling
         autoCloseBrackets: localStorage.getItem('codelab-auto-close-brackets') !== 'false',
         matchBrackets: true,
         extraKeys: {
@@ -196,6 +197,25 @@ function initCodeMirror() {
     codeMirrorEditor.on('change', () => {
         updateLineNumbers();
         saveCode();
+        
+        // Auto-detect language based on content
+        const code = codeMirrorEditor.getValue();
+        if (code.trim() && code !== languageConfig[currentLanguage].placeholder) {
+            const detectedLang = autoDetectLanguage(code);
+            if (detectedLang !== currentLanguage && languageConfig[detectedLang]) {
+                // Update language without showing toast notification
+                currentLanguage = detectedLang;
+                currentLang.textContent = languageConfig[detectedLang].name;
+                
+                // Update editor mode
+                if (codeMirrorEditor) {
+                    codeMirrorEditor.setOption('mode', languageConfig[detectedLang].mode);
+                }
+                
+                // Save language preference
+                localStorage.setItem('codelab-language', detectedLang);
+            }
+        }
     });
     
     // Sync scroll with line numbers
@@ -212,6 +232,50 @@ function initCodeMirror() {
     const savedFontSize = localStorage.getItem('codelab-font-size') || '14';
     document.documentElement.style.setProperty('--editor-font-size', `${savedFontSize}px`);
     codeMirrorEditor.getWrapperElement().style.fontSize = `${savedFontSize}px`;
+}
+
+// Initialize draggable resizer between editor and output panels
+function initMainResizer() {
+    const resizer = document.getElementById('mainResizer');
+    const main = document.querySelector('.main-content');
+    if (!resizer || !main) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let startLeftWidth = 0;
+
+    const minPanelWidth = 280; // px
+
+    const onMouseDown = (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        const editorPanel = document.querySelector('.editor-panel');
+        if (!editorPanel) return;
+        startLeftWidth = editorPanel.getBoundingClientRect().width;
+        document.body.classList.add('no-select');
+        e.preventDefault();
+    };
+
+    const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        let newLeft = Math.max(minPanelWidth, startLeftWidth + dx);
+
+        const totalWidth = main.getBoundingClientRect().width;
+        const rightWidth = Math.max(minPanelWidth, totalWidth - newLeft - resizer.getBoundingClientRect().width);
+        // Convert to grid template columns: left | resizer | right
+        main.style.gridTemplateColumns = `${newLeft}px ${resizer.getBoundingClientRect().width}px ${rightWidth}px`;
+    };
+
+    const onMouseUp = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        document.body.classList.remove('no-select');
+    };
+
+    resizer.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
 }
 
 // Set up all event listeners
@@ -232,7 +296,10 @@ function setupEventListeners() {
     });
     
     // Run code
-    runBtn.addEventListener('click', executeCode);
+    runBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        executeCode();
+    });
     
     // Debug code
     debugBtn.addEventListener('click', toggleDebugMode);
@@ -350,13 +417,18 @@ function updateLanguage(lang) {
     // Update editor mode
     if (codeMirrorEditor) {
         codeMirrorEditor.setOption('mode', languageConfig[lang].mode);
-        codeMirrorEditor.setValue(languageConfig[lang].placeholder);
+        // Only set placeholder if the editor is empty or contains placeholder text
+        const currentValue = codeMirrorEditor.getValue();
+        if (!currentValue || currentValue === languageConfig[currentLanguage].placeholder) {
+            codeMirrorEditor.setValue(languageConfig[lang].placeholder);
+        }
     }
     
     // Save language preference
     localStorage.setItem('codelab-language', lang);
     
-    showToast(`Language changed to ${languageConfig[lang].name}`);
+    // Remove the toast notification for language changes
+    // showToast(`Language changed to ${languageConfig[lang].name}`);
 }
 
 // Update line numbers based on editor content
@@ -382,11 +454,7 @@ async function executeCode() {
     }
 
     showLoading(true);
-    clearOutput(false);
     
-    // Switch to output tab to show execution results
-    switchOutputTab('output');
-
     if (currentLanguage === 'html') {
         executeHtml(code);
         showLoading(false);
@@ -399,7 +467,7 @@ async function executeCode() {
     }
 
     try {
-        const response = await fetch('http://localhost:3002/execute', {
+        const response = await fetch('http://localhost:3003/execute', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -414,11 +482,36 @@ async function executeCode() {
         const result = await response.json();
 
         if (response.ok) {
-            outputArea.textContent = result.output;
-            showToast('Code executed!', 'success');
+            // Ensure output area is visible and set content
+            outputArea.textContent = result.output || 'Code executed with no output.';
+            outputArea.classList.remove('status-error');
+            outputArea.classList.add('status-success');
+            
+            // Show output in the output section first
+            switchOutputTab('output');
+            
+            // Add a small delay to ensure the output is visible
+            setTimeout(() => {
+                outputArea.style.display = 'block';
+                outputArea.classList.add('active');
+            }, 100);
+            
+            showToast('Code executed successfully!', 'success');
+            
+            // Analyze complexity and show in complexity section (don't auto-switch)
+            analyzeCodeComplexity(code, currentLanguage);
         } else {
             outputArea.textContent = `Error: ${result.error}`;
+            outputArea.classList.remove('status-success');
             outputArea.classList.add('status-error');
+            
+            // Ensure error output is visible
+            switchOutputTab('output');
+            setTimeout(() => {
+                outputArea.style.display = 'block';
+                outputArea.classList.add('active');
+            }, 100);
+            
             showToast('Execution failed. Check console for errors.', 'error');
         }
     } catch (error) {
@@ -430,6 +523,7 @@ async function executeCode() {
     }
 }
 
+
 function executeJavaScript(code, input, isDebug = false) {
     let processedCode = code;
     if (isDebug) {
@@ -473,73 +567,54 @@ function executeJavaScript(code, input, isDebug = false) {
     }
 }
 
-function executeHtml(code) {
-    outputArea.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    outputArea.appendChild(iframe);
-
-    const cssContent = projectFiles['styles.css'] ? projectFiles['styles.css'].content : '';
-    const jsContent = projectFiles['main.js'] ? projectFiles['main.js'].content : '';
-
-    iframe.srcdoc = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>${cssContent}</style>
-        </head>
-        <body>
-            ${code}
-            <script>${jsContent}<\/script>
-        </body>
-        </html>
-    `;
-    showToast('HTML preview rendered.', 'success');
-}
-
-function executeJavaScript(code, input, isDebug = false) {
-    let processedCode = code;
-    if (isDebug) {
-        const lines = code.split('\n');
-        // Prepend 'debugger;' to lines with breakpoints
-        [...breakpoints].forEach(lineNum => {
-            if (lineNum < lines.length) {
-                lines[lineNum] = `debugger; ${lines[lineNum]}`;
-            }
-        });
-        processedCode = lines.join('\n');
-    }
-
-    let output = [];
-    const originalConsoleLog = console.log;
-    const originalPrompt = window.prompt;
-    
-    window.prompt = () => input;
-
-    console.log = (...args) => {
-        output.push(args.map(arg => {
-            if (typeof arg === 'object' && arg !== null) {
-                try {
-                    return JSON.stringify(arg, null, 2);
-                } catch (e) {
-                    return 'Unserializable object';
-                }
-            }
-            return String(arg);
-        }).join(' '));
-    };
-
+// Analyze Code Complexity
+async function analyzeCodeComplexity(code, language) {
     try {
-        new Function(processedCode)();
-        return output.join('\n') || 'Code executed with no output.';
+        // Show loading state in complexity area
+        complexityArea.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Analyzing code complexity...</p>';
+        
+        const response = await fetch('http://localhost:3003/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                language: language,
+                code: code,
+            }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            complexityArea.innerHTML = `
+                <div class="complexity-analysis">
+                    <div class="complexity-group">
+                        <h4><i class="fas fa-clock"></i> Time Complexity - <span>${result.time}</span></h4>
+                    </div>
+                    
+                    <div class="complexity-group">
+                        <h4><i class="fas fa-memory"></i> Space Complexity - <span>${result.space}</span></h4>
+                    </div>
+                </div>
+            `;
+        } else {
+            complexityArea.innerHTML = `
+                <div class="complexity-error">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Analysis Error</h4>
+                    <p class="status-error">Error: ${result.error}</p>
+                    <p>Please check your code and try again.</p>
+                </div>
+            `;
+        }
     } catch (error) {
-        throw error;
-    } finally {
-        console.log = originalConsoleLog;
-        window.prompt = originalPrompt;
+        complexityArea.innerHTML = `
+            <div class="complexity-error">
+                <h4><i class="fas fa-exclamation-triangle"></i> Connection Error</h4>
+                <p class="status-error">Error: ${error.message}</p>
+                <p>Please ensure the backend server is running at http://localhost:3003</p>
+            </div>
+        `;
     }
 }
 
@@ -574,6 +649,17 @@ function executeHtml(code) {
 function clearOutput(showNotification = true) {
     outputArea.textContent = '';
     outputArea.classList.remove('status-error', 'status-success');
+    
+    // Also clear complexity analysis
+    complexityArea.innerHTML = '';
+    
+    // Ensure output area remains visible after clearing
+    switchOutputTab('output');
+    outputArea.style.display = 'block';
+    outputArea.classList.add('active');
+    outputArea.style.overflow = 'auto';
+    outputArea.style.maxHeight = '100%';
+    outputArea.style.height = '100%';
     
     if (showNotification) {
         showToast('Output cleared');
@@ -1095,9 +1181,13 @@ function validateTabSize() {
 
 // Switch output tab
 function switchOutputTab(tabName) {
-    // Hide all tabs
+    // Hide all tabs first
     document.querySelectorAll('.output-area').forEach(area => {
         area.classList.remove('active');
+        area.style.display = 'none';
+        area.style.overflow = 'auto';
+        area.style.maxHeight = '100%';
+        area.style.height = '100%';
     });
     
     // Deactivate all tab buttons
@@ -1106,8 +1196,32 @@ function switchOutputTab(tabName) {
     });
     
     // Activate selected tab
-    document.getElementById(`${tabName}Area`).classList.add('active');
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    const targetArea = document.getElementById(`${tabName}Area`);
+    const targetTab = document.querySelector(`[data-tab="${tabName}"]`);
+    
+    if (targetArea && targetTab) {
+        targetArea.classList.add('active');
+        targetArea.style.display = 'block';
+        targetArea.style.overflow = 'auto';
+        targetArea.style.maxHeight = '100%';
+        targetArea.style.height = '100%';
+        targetTab.classList.add('active');
+        
+        // Ensure proper content separation - only show the selected tab content
+        if (tabName === 'output') {
+            // Show only output content, hide others
+            document.getElementById('complexityArea').style.display = 'none';
+            document.getElementById('debugArea').style.display = 'none';
+        } else if (tabName === 'complexity') {
+            // Show only complexity content, hide others
+            document.getElementById('outputArea').style.display = 'none';
+            document.getElementById('debugArea').style.display = 'none';
+        } else if (tabName === 'debug') {
+            // Show only debug content, hide others
+            document.getElementById('outputArea').style.display = 'none';
+            document.getElementById('complexityArea').style.display = 'none';
+        }
+    }
 }
 
 // Toggle debug mode
@@ -1118,35 +1232,54 @@ function toggleDebugMode() {
         debugBtn.classList.add('active');
         showToast('Debug mode activated', 'info');
         switchOutputTab('debug');
-        document.querySelector('#debugArea .debug-controls').style.display = 'none';
+        
+        // Show debug controls and information
+        const debugControls = document.querySelector('#debugArea .debug-controls');
+        if (debugControls) {
+            debugControls.style.display = 'flex';
+        }
+        
         const debugInfo = document.querySelector('#debugArea .debug-info');
         if (debugInfo) {
             debugInfo.innerHTML = `
-                <h4>Debugging with Browser DevTools</h4>
-                <p>1. Open your browser's developer tools (F12 or Ctrl+Shift+I).</p>
-                <p>2. Set breakpoints by clicking in the gutter next to the line numbers.</p>
-                <p>3. Click the "Execute" button to start debugging.</p>
-                <p>4. Use the controls in your browser's debugger to step through the code.</p>
-                <p><strong>Note:</strong> This only works for JavaScript.</p>
+                <h4>Debug Controls</h4>
+                <p>Use the debug controls below to step through your code:</p>
+                
+                <h4>Breakpoints</h4>
+                <div id="breakpointsList">No breakpoints set</div>
+                
+                <h4>Variables</h4>
+                <div id="variablesList">No variables to display</div>
+                
+                <h4>Debug Instructions</h4>
+                <p>1. Set breakpoints by clicking in the gutter next to line numbers</p>
+                <p>2. Click "Execute" to run your code with debugging</p>
+                <p>3. Use the debug controls to step through execution</p>
+                <p><strong>Note:</strong> Debug mode works best with JavaScript code</p>
             `;
         }
+        
+        // Re-initialize these elements
+        breakpointsList = document.getElementById('breakpointsList');
+        variablesList = document.getElementById('variablesList');
+        updateBreakpointsList();
     } else {
         debugBtn.classList.remove('active');
         showToast('Debug mode deactivated', 'info');
         switchOutputTab('output');
-        document.querySelector('#debugArea .debug-controls').style.display = 'flex';
+        
+        // Hide debug controls
+        const debugControls = document.querySelector('#debugArea .debug-controls');
+        if (debugControls) {
+            debugControls.style.display = 'none';
+        }
+        
         const debugInfo = document.querySelector('#debugArea .debug-info');
         if (debugInfo) {
             debugInfo.innerHTML = `
-                <h4>Breakpoints</h4>
-                <div id="breakpointsList">No breakpoints set</div>
-                <h4>Variables</h4>
-                <div id="variablesList">No variables to display</div>
+                <h4>Debug Mode Disabled</h4>
+                <p>Click the debug button to enable debugging features.</p>
             `;
-            // Re-initialize these elements as they were replaced
-            breakpointsList = document.getElementById('breakpointsList');
-            variablesList = document.getElementById('variablesList');
-            updateBreakpointsList();
         }
     }
 }
@@ -1300,11 +1433,75 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
-// Beforeunload event to warn about unsaved changes
-window.addEventListener('beforeunload', (event) => {
-    const code = codeMirrorEditor ? codeMirrorEditor.getValue() : '';
-    if (code) {
-        event.preventDefault();
-        event.returnValue = '';
+// Auto-detect language based on code content
+function autoDetectLanguage(code) {
+    const trimmedCode = code.trim();
+    
+    // Python detection
+    if (trimmedCode.includes('def ') || trimmedCode.includes('import ') || 
+        trimmedCode.includes('print(') || trimmedCode.includes('if __name__') ||
+        trimmedCode.startsWith('#') || trimmedCode.includes('elif ') ||
+        trimmedCode.includes('try:') || trimmedCode.includes('except:')) {
+        return 'python';
     }
-});
+    
+    // Java detection
+    if (trimmedCode.includes('public class') || trimmedCode.includes('public static void main') ||
+        trimmedCode.includes('System.out.println') || trimmedCode.includes('import java.') ||
+        trimmedCode.includes('private ') || trimmedCode.includes('protected ')) {
+        return 'java';
+    }
+    
+    // C++ detection
+    if (trimmedCode.includes('#include <iostream>') || trimmedCode.includes('using namespace std') ||
+        trimmedCode.includes('cout <<') || trimmedCode.includes('cin >>') ||
+        trimmedCode.includes('std::') || trimmedCode.includes('namespace ')) {
+        return 'cpp';
+    }
+    
+    // C detection
+    if (trimmedCode.includes('#include <stdio.h>') || trimmedCode.includes('printf(') ||
+        trimmedCode.includes('scanf(') || trimmedCode.includes('#include <stdlib.h>') ||
+        (trimmedCode.includes('#include') && !trimmedCode.includes('<iostream>'))) {
+        return 'c';
+    }
+    
+    // TypeScript detection
+    if (trimmedCode.includes(': string') || trimmedCode.includes(': number') ||
+        trimmedCode.includes(': boolean') || trimmedCode.includes('interface ') ||
+        trimmedCode.includes('type ') || trimmedCode.includes('enum ') ||
+        trimmedCode.includes('as ') || trimmedCode.includes('extends ')) {
+        return 'typescript';
+    }
+    
+    // HTML detection
+    if (trimmedCode.includes('<!DOCTYPE html>') || trimmedCode.includes('<html>') ||
+        trimmedCode.includes('<head>') || trimmedCode.includes('<body>') ||
+        trimmedCode.includes('<div>') || trimmedCode.includes('<p>')) {
+        return 'html';
+    }
+    
+    // CSS detection
+    if (trimmedCode.includes('{') && trimmedCode.includes('}') && 
+        (trimmedCode.includes(':') || trimmedCode.includes('@media') || 
+         trimmedCode.includes('@keyframes') || trimmedCode.includes('/*'))) {
+        return 'css';
+    }
+    
+    // Go detection
+    if (trimmedCode.includes('package main') || trimmedCode.includes('import "fmt"') ||
+        trimmedCode.includes('func main()') || trimmedCode.includes('fmt.Println') ||
+        trimmedCode.includes('var ') || trimmedCode.includes('const ')) {
+        return 'go';
+    }
+    
+    // Rust detection
+    if (trimmedCode.includes('fn main()') || trimmedCode.includes('println!') ||
+        trimmedCode.includes('let ') || trimmedCode.includes('mut ') ||
+        trimmedCode.includes('use ') || trimmedCode.includes('mod ')) {
+        return 'rust';
+    }
+    
+    // Default to JavaScript
+    return 'javascript';
+}
