@@ -10,7 +10,7 @@ const port = process.env.PORT || 3003;
 const EXECUTE_TIMEOUT_MS = parseInt(process.env.EXECUTE_TIMEOUT_MS || '15000', 10);
 
 const corsOptions = {
-  origin: 'https://codelab-editor-leto-brijnandan101s-projects.vercel.app',
+  origin: 'https://codelab-editor-leto-git-main-brijnandan101s-projects.vercel.app',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 
 // Manual CORS middleware
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'https://codelab-editor-leto-brijnandan101s-projects.vercel.app');
+    res.setHeader('Access-Control-Allow-Origin', 'https://codelab-editor-leto-git-main-brijnandan101s-projects.vercel.app');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') {
