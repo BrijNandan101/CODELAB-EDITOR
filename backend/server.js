@@ -12,14 +12,12 @@ const EXECUTE_TIMEOUT_MS = parseInt(process.env.EXECUTE_TIMEOUT_MS || '15000', 1
 app.use(cors());
 app.use(bodyParser.json());
 
-const apiRouter = express.Router();
-
 // Health check for deployments
-apiRouter.get('/health', (req, res) => {
+app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-apiRouter.post('/execute', (req, res) => {
+app.post('/execute', (req, res) => {
     const { language, code, input } = req.body;
 
     if (!code) {
@@ -247,7 +245,7 @@ apiRouter.post('/execute', (req, res) => {
     runCode();
 });
 
-apiRouter.post('/analyze', (req, res) => {
+app.post('/analyze', (req, res) => {
     const { language, code } = req.body;
 
     if (!code) {
@@ -378,8 +376,6 @@ function analyzeComplexity(code, language) {
 
     return { time: timeComplexity, space: spaceComplexity };
 }
-
-app.use('/api', apiRouter);
 
 app.listen(port, () => {
     console.log(`Backend server listening at http://localhost:${port}`);
