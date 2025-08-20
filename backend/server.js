@@ -21,11 +21,11 @@ app.options('*', cors(corsOptions)); // enable pre-flight request for all routes
 app.use(bodyParser.json());
 
 // Health check for deployments
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-app.post('/execute', (req, res) => {
+app.post('/api/execute', (req, res) => {
     const { language, code, input } = req.body;
 
     if (!code) {
@@ -253,7 +253,7 @@ app.post('/execute', (req, res) => {
     runCode();
 });
 
-app.post('/analyze', (req, res) => {
+app.post('/api/analyze', (req, res) => {
     const { language, code } = req.body;
 
     if (!code) {
