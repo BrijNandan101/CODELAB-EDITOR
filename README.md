@@ -15,10 +15,10 @@ CodeLab is a feature-rich, browser-based code editor with a powerful Node.js bac
 ## 📸 Screenshots
 
 ### Complexity Analysis View
-![Complexity Analysis View](Screenshot 2025-08-20 181836.png)
+![Complexity Analysis View](Screenshot%202025-08-20%20181901.png)
 
 ### Console Output View
-![Console Output View](Screenshot 2025-08-20 181901.png)
+![Console Output View](Screenshot%202025-08-20%20181836.png)
 
 ## 🚀 Getting Started
 
