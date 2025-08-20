@@ -12,20 +12,14 @@ const EXECUTE_TIMEOUT_MS = parseInt(process.env.EXECUTE_TIMEOUT_MS || '15000', 1
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve frontend files
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
-
-// Fallback to index.html for static single-page hosting (optional for static hosting)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
-});
+const apiRouter = express.Router();
 
 // Health check for deployments
-app.get('/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-app.post('/execute', (req, res) => {
+apiRouter.post('/execute', (req, res) => {
     const { language, code, input } = req.body;
 
     if (!code) {
@@ -253,7 +247,7 @@ app.post('/execute', (req, res) => {
     runCode();
 });
 
-app.post('/analyze', (req, res) => {
+apiRouter.post('/analyze', (req, res) => {
     const { language, code } = req.body;
 
     if (!code) {
@@ -384,6 +378,8 @@ function analyzeComplexity(code, language) {
 
     return { time: timeComplexity, space: spaceComplexity };
 }
+
+app.use('/api', apiRouter);
 
 app.listen(port, () => {
     console.log(`Backend server listening at http://localhost:${port}`);
