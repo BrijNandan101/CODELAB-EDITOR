@@ -467,7 +467,7 @@ async function executeCode() {
     }
 
     try {
-        const response = await fetch('http://localhost:3003/execute', {
+        const response = await fetch('/execute', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -573,7 +573,7 @@ async function analyzeCodeComplexity(code, language) {
         // Show loading state in complexity area
         complexityArea.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Analyzing code complexity...</p>';
         
-        const response = await fetch('http://localhost:3003/analyze', {
+        const response = await fetch('/analyze', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
