@@ -197,25 +197,6 @@ function initCodeMirror() {
     codeMirrorEditor.on('change', () => {
         updateLineNumbers();
         saveCode();
-        
-        // Auto-detect language based on content
-        const code = codeMirrorEditor.getValue();
-        if (code.trim() && code !== languageConfig[currentLanguage].placeholder) {
-            const detectedLang = autoDetectLanguage(code);
-            if (detectedLang !== currentLanguage && languageConfig[detectedLang]) {
-                // Update language without showing toast notification
-                currentLanguage = detectedLang;
-                currentLang.textContent = languageConfig[detectedLang].name;
-                
-                // Update editor mode
-                if (codeMirrorEditor) {
-                    codeMirrorEditor.setOption('mode', languageConfig[detectedLang].mode);
-                }
-                
-                // Save language preference
-                localStorage.setItem('codelab-language', detectedLang);
-            }
-        }
     });
     
     // Sync scroll with line numbers

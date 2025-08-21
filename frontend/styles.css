@@ -692,6 +692,8 @@ body {
     right: 0;
     bottom: 0;
     height: auto !important;
+    -webkit-user-select: text; /* Allow text selection on iOS */
+    user-select: text; /* Standard property */
 }
 
 .CodeMirror-gutters {
