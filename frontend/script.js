@@ -793,36 +793,13 @@ function createNewFile() {
 
 // Save code to local storage
 function saveCode() {
-    const codeData = {
-        code: codeMirrorEditor ? codeMirrorEditor.getValue() : '',
-        language: currentLanguage,
-        timestamp: new Date().toISOString()
-    };
-    
-    localStorage.setItem('codelab-code', JSON.stringify(codeData));
+    // Code saving to localStorage is disabled to provide a fresh session for each user.
 }
 
 // Load saved code from local storage
 function loadSavedCode() {
-    const savedCode = localStorage.getItem('codelab-code');
-    
-    if (savedCode) {
-        try {
-            const codeData = JSON.parse(savedCode);
-            
-            if (codeMirrorEditor) {
-                codeMirrorEditor.setValue(codeData.code || '');
-            }
-            
-            if (codeData.language) {
-                updateLanguage(codeData.language);
-            }
-            
-            updateLineNumbers();
-        } catch (error) {
-            console.error('Error loading saved code:', error);
-        }
-    }
+    // The functionality to load saved code has been removed to ensure that
+    // every user starts with a fresh, clean slate.
     
     // Load theme preference
     const savedTheme = localStorage.getItem('codelab-theme');
@@ -1062,19 +1039,14 @@ function updateFileExplorer() {
 
 // Create file system
 function createFileSystem() {
-    if (!localStorage.getItem('codelab-files')) {
-        projectFiles = {
-            'main.js': {
-                content: languageConfig.javascript.placeholder,
-                language: 'javascript',
-                type: 'file'
-            }
-        };
-        localStorage.setItem('codelab-files', JSON.stringify(projectFiles));
-    } else {
-        projectFiles = JSON.parse(localStorage.getItem('codelab-files'));
-    }
-    
+    // Always create a fresh file system for each new session.
+    projectFiles = {
+        'main.js': {
+            content: languageConfig.javascript.placeholder,
+            language: 'javascript',
+            type: 'file'
+        }
+    };
     updateFileExplorer();
 }
 
