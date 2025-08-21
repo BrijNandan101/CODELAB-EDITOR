@@ -331,6 +331,9 @@ Happy coding! ✨</div>
     <input type="file" id="fileInput" style="display: none;" accept=".js,.py,.java,.cpp,.c,.html,.css,.ts,.go,.rs,.txt">
     <input type="file" id="projectInput" style="display: none;" accept=".json" multiple>
 
-    <script src="script.js"></script>
+    <script>
+        // Add a cache-busting query parameter to the script URL
+        document.write('<script src="script.js?v=' + new Date().getTime() + '"><\/script>');
+    </script>
 </body>
 </html>
