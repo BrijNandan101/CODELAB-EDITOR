@@ -2,6 +2,11 @@
 
 CodeLab is a feature-rich, browser-based code editor with a powerful Node.js backend. It supports code execution in multiple languages, provides real-time complexity analysis, and offers a sleek, responsive interface for an exceptional coding experience.
 
+## 🌐 Live Demo
+
+You can try out the live version of CodeLab here:
+[https://codelab-editor.onrender.com/](https://codelab-editor.onrender.com/)
+
 ## ✨ Features
 
 -   **Multi-Language Support**: Execute code in JavaScript, Python, Java, C++, and more.
