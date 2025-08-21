@@ -84,71 +84,79 @@ const languageConfig = {
         name: 'JavaScript',
         extension: 'js',
         mode: 'javascript',
-        placeholder: '// Welcome to CodeLab! 🚀\n// Start coding your masterpiece here...\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Developer"));'
+        placeholder: '// welcome to the code lab online editor'
     },
     typescript: {
         name: 'TypeScript',
         extension: 'ts',
         mode: 'text/typescript',
-        placeholder: '// TypeScript code example\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("TypeScript Developer"));'
+        placeholder: '// welcome to the code lab online editor'
     },
     python: {
         name: 'Python',
         extension: 'py',
         mode: 'python',
-        placeholder: '# Python code example\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Python Developer"))'
+        placeholder: '# welcome to the code lab online editor'
     },
     java: {
         name: 'Java',
         extension: 'java',
         mode: 'text/x-java',
-        placeholder: '// Java code example\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, Java Developer!");\n    }\n}'
+        placeholder: '// welcome to the code lab online editor'
     },
     cpp: {
         name: 'C++',
         extension: 'cpp',
         mode: 'text/x-c++src',
-        placeholder: '// C++ code example\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, C++ Developer!" << endl;\n    return 0;\n}'
+        placeholder: '// welcome to the code lab online editor'
     },
     c: {
         name: 'C',
         extension: 'c',
         mode: 'text/x-csrc',
-        placeholder: '// C code example\n#include <stdio.h>\n\nint main() {\n    printf("Hello, C Developer!\\n");\n    return 0;\n}'
+        placeholder: '// welcome to the code lab online editor'
     },
     go: {
         name: 'Go',
         extension: 'go',
         mode: 'go',
-        placeholder: '// Go code example\npackage main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, Go Developer!");\n}'
+        placeholder: '// welcome to the code lab online editor'
     },
     rust: {
         name: 'Rust',
         extension: 'rs',
         mode: 'rust',
-        placeholder: '// Rust code example\nfn main() {\n    println!("Hello, Rust Developer!");\n}'
+        placeholder: '// welcome to the code lab online editor'
     },
     html: {
         name: 'HTML',
         extension: 'html',
         mode: 'htmlmixed',
-        placeholder: '<!DOCTYPE html>\n<html>\n<head>\n    <title>Hello HTML</title>\n</head>\n<body>\n    <h1>Hello, HTML Developer!</h1>\n</body>\n</html>'
+        placeholder: '<!-- welcome to the code lab online editor -->'
     },
     css: {
         name: 'CSS',
         extension: 'css',
         mode: 'css',
-        placeholder: '/* CSS code example */\nbody {\n    font-family: Arial, sans-serif;\n    background-color: #f0f0f0;\n    color: #333;\n}\n\nh1 {\n    color: #0066cc;\n}'
+        placeholder: '/* welcome to the code lab online editor */'
     }
 };
 
 // Initialize the editor
 function initEditor() {
-    // Set initial theme
+    // Load theme preference
+    const savedTheme = localStorage.getItem('codelab-theme');
+    if (savedTheme) {
+        isDarkTheme = savedTheme === 'dark';
+    }
     updateTheme();
     
-    // Set initial language
-    updateLanguage('javascript');
+    // Load language preference
+    const savedLanguage = localStorage.getItem('codelab-language');
+    if (savedLanguage && languageConfig[savedLanguage]) {
+        currentLanguage = savedLanguage;
+    }
+    currentLang.textContent = languageConfig[currentLanguage].name;
     
     // Initialize CodeMirror
     initCodeMirror();
@@ -158,9 +166,6 @@ function initEditor() {
     
     // Set up event listeners
     setupEventListeners();
-    
-    // Load saved code if available
-    loadSavedCode();
     
     // Initialize file system
     createFileSystem();
@@ -777,24 +782,6 @@ function saveCode() {
     // Code saving to localStorage is disabled to provide a fresh session for each user.
 }
 
-// Load saved code from local storage
-function loadSavedCode() {
-    // The functionality to load saved code has been removed to ensure that
-    // every user starts with a fresh, clean slate.
-    
-    // Load theme preference
-    const savedTheme = localStorage.getItem('codelab-theme');
-    if (savedTheme) {
-        isDarkTheme = savedTheme === 'dark';
-        updateTheme();
-    }
-    
-    // Load language preference
-    const savedLanguage = localStorage.getItem('codelab-language');
-    if (savedLanguage && languageConfig[savedLanguage]) {
-        updateLanguage(savedLanguage);
-    }
-}
 
 // Save code to a file
 function saveCodeToFile() {
